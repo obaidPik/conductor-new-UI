@@ -1,7 +1,15 @@
 import Head from 'next/head';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import CountUp from 'react-countup';
+import {
+  orkesConductorClient,
+  WorkflowExecutor,
+  TaskType,
+} from "@io-orkes/conductor-javascript";
 
+import getConfig from "next/config";
+
+const { publicRuntimeConfig } = getConfig();
 // function fetchAPI(str, obj?: RequestInit) {
 //   return fetch(str, obj)
 //     .then(async (res) => {
@@ -135,7 +143,7 @@ function ProductList() {
           Available Credit
         </div>
         <div>
-        {/* {typeof window !== 'undefined'&&<CountUp start={oldCredit} end={credit} prefix={'$'} duration={1} /> } */}
+        <CountUp start={oldCredit} end={credit} prefix={'$'} duration={1} />
         </div>
         <div className='button-wrap'>
           <input className={inputVisible?'balance-input':'balance-input inactive'} type="number" value={amount} onChange={(e)=>setAddAmount(parseInt(e.target.value))} />
@@ -161,7 +169,82 @@ function Product({ product,onChange }) {
   const [state, setState] = React.useState<ITEMSTATE>('NEW');
   const stateRef = React.useRef<ITEMSTATE>();
   stateRef.current = state;
+  const [execId, setExecid] = useState(null);
+  const timerRef = useRef(null);
 
+  useEffect(() => {
+    const queryStatus = async () => {
+      const client = await clientPromise;
+      const workflowStatus = await client.workflowResource.getExecutionStatus(
+        execId,
+        true
+      );
+      if (
+        ["COMPLETED", "FAILED", "TERMINATED"].includes(workflowStatus.status)
+      ) {if (workflowStatus.status === "COMPLETED") {
+        console.log("***********Processed Names*******************")
+        console.log(workflowStatus.output.result);
+      }
+        clearTimeout(timerRef.current);
+        setExecid(null);
+      }
+    }
+    if (execId) {
+      timerRef.current = setInterval(() => {
+        queryStatus();
+      }, 1000);
+    }
+  }, [execId])
+  
+
+  const fakeInitialCredit = 100;
+  const clientPromise = orkesConductorClient(publicRuntimeConfig.conductor);
+  const handleClick = () => {
+    setState('ORDERED');
+    const click = async () => {
+      const client = await clientPromise;
+      // Create an instance of a workflow executor
+      const executor = new WorkflowExecutor(client);
+      // using the executor helper start the workflow
+      const executionId = await executor.startWorkflow({
+        name: publicRuntimeConfig.workflows.checkout,
+        version: 1,
+        input: {
+        availableCredit: fakeInitialCredit,
+        productID: product.id,
+        price: product.price,
+       },
+        correlationId: "obUser",
+      });
+      setExecid(executionId);
+    };
+    click();
+  };
+
+  // useEffect(() => {
+  //   // Made a interval effect that will start running when we have an executionId
+  //   const queryStatus = async () => {
+  //     const client = await clientPromise;
+  //     // Using executionId query for status
+  //     const workflowStatus = await client.workflowResource.getExecutionStatus(
+  //       executionId,
+  //       true
+  //     );
+  //     setExecutionStatus(workflowStatus);
+  //     // If workflow finished clear interval and clean executionId
+  //     if (
+  //       ["COMPLETED", "FAILED", "TERMINATED"].includes(workflowStatus.status)
+  //     ) {
+  //       clearTimeout(timerRef.current);
+  //       setExecutionId(null);
+  //     }
+  //   };
+  //   if (executionId) {
+  //     timerRef.current = setInterval(() => {
+  //       queryStatus();
+  //     }, 1000);
+  //   }
+  // }, [executionId]);
 
   useEffect(() => {
     if (state === 'NEW' || state === 'CONFIRMED') {
@@ -258,6 +341,7 @@ function Product({ product,onChange }) {
             {
               NEW: (
                 <button
+                  onClick={handleClick}
                   className="w-full bg-white hover:bg-blue-200 bg-opacity-75 backdrop-filter backdrop-blur py-2 px-4 rounded-md text-sm font-medium text-gray-900 text-center"
                 >
                   Buy Now

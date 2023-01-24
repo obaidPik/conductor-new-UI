@@ -10,7 +10,8 @@
     "build:temporal": "tsc --build ./temporal/tsconfig.json",
     "start": "next start -p $PORT & node ./temporal/lib/worker",
     "start:worker": "node ./temporal/lib/worker",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "seedWf":"node scripts/workflowCreation.mjs"
   },
   "dependencies": {
     "@headlessui/react": "^1.4.1",
@@ -30,7 +31,16 @@
     "react-dom": "^18.2.0",
     "react-toastify": "^8.0.3",
     "swr": "^1.0.1",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "@emotion/cache": "latest",
+    "@emotion/react": "latest",
+    "@emotion/server": "latest",
+    "@emotion/styled": "latest",
+    "@io-orkes/conductor-javascript": "^0.0.11",
+    "@mui/icons-material": "latest",
+    "@mui/lab": "^5.0.0-alpha.114",
+    "@mui/material": "latest",
+    "@next/font": "latest"
   },
   "nodemonConfig": {
     "execMap": {
