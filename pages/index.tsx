@@ -64,7 +64,7 @@ const products = [
     name: 'Fusion',
     category: 'Icon set',
     href: '#',
-    price: '$49',
+    price: 49,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-01.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -74,7 +74,7 @@ const products = [
     name: 'Icons',
     category: 'Icon set',
     href: '#',
-    price: '$149',
+    price: 149,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-02.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -84,7 +84,7 @@ const products = [
     name: 'Scaffold',
     category: 'Icon set',
     href: '#',
-    price: '$99',
+    price: 99,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-03.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -94,7 +94,7 @@ const products = [
     name: 'Bone',
     category: 'Icon set',
     href: '#',
-    price: '$249',
+    price: 249,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-04.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -182,9 +182,11 @@ function Product({ product,onChange }) {
       if (
         ["COMPLETED", "FAILED", "TERMINATED"].includes(workflowStatus.status)
       ) {if (workflowStatus.status === "COMPLETED") {
-        console.log("***********Processed Names*******************")
-        console.log(workflowStatus.output.result);
+        setState('CONFIRMED');
       }
+      setTimeout(()=>{
+        setState('NEW');
+      }, 1000);
         clearTimeout(timerRef.current);
         setExecid(null);
       }
@@ -192,7 +194,7 @@ function Product({ product,onChange }) {
     if (execId) {
       timerRef.current = setInterval(() => {
         queryStatus();
-      }, 1000);
+      }, 15000);
     }
   }, [execId])
   
@@ -219,6 +221,24 @@ function Product({ product,onChange }) {
       setExecid(executionId);
     };
     click();
+  };
+
+  const cancel = () => {
+    const cancelOrder = async () => {
+      const client = await clientPromise;
+      //create an instance of the executor and cancel the running workflow
+      const executor = new WorkflowExecutor(client);
+      executor.terminate(execId, "User cancelled order");
+      // clean the executor id. and clear the timer
+      setExecid(null);
+      clearTimeout(timerRef.current);
+      setState('CANCELLING');
+      setTimeout(()=>{
+        setState('NEW');
+      }, 1000);
+    };
+
+    cancelOrder();
   };
 
   // useEffect(() => {
@@ -354,6 +374,7 @@ function Product({ product,onChange }) {
               ),
               ORDERED: (
                 <button
+                  onClick={cancel}
                   className="w-full bg-white hover:bg-blue-200 bg-opacity-75 backdrop-filter backdrop-blur py-2 px-4 rounded-md text-sm font-medium text-gray-900 text-center"
                 >
                   {/* {getState()} */}
