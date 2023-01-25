@@ -25,8 +25,7 @@ const createCheckoutWorkflow = () =>
         price: "${workflow.input.price}",
         expression: function ($) {
           return function () {
-            var totaAmount = 100;
-            return totaAmount >= $.price ? "hasCredit" : "noCredit";
+            return $.totalCredit >= $.price ? "hasCredit" : "noCredit";
           };
         },
       },

@@ -65,7 +65,7 @@ const products = [
     name: 'Fusion',
     category: 'Icon set',
     href: '#',
-    price: 49,
+    price: 100,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-01.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -75,7 +75,7 @@ const products = [
     name: 'Icons',
     category: 'Icon set',
     href: '#',
-    price: 149,
+    price: 100,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-02.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -85,7 +85,7 @@ const products = [
     name: 'Scaffold',
     category: 'Icon set',
     href: '#',
-    price: 99,
+    price: 100,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-03.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -95,7 +95,7 @@ const products = [
     name: 'Bone',
     category: 'Icon set',
     href: '#',
-    price: 249,
+    price: 100,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-04.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -128,6 +128,14 @@ function ProductList() {
       setCredit(res.message)
     });
   }
+
+  function minusBalance(amount:number){
+    fetchAPI(`/api/addBalance?amount=${amount}`).then(res => {
+      // setOldCredit(credit);
+      // setCredit(res.message)
+    });
+  }
+
   function handleAddBalance() {
     if (inputVisible) { 
       addBalance(amount?amount:0)
@@ -154,7 +162,7 @@ function ProductList() {
       <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:max-w-7xl lg:px-8">
         <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 sm:gap-y-10 md:grid-cols-4">
           {products.map((product) => (
-            <Product product={product} onChange={(flag)=>handleStateChange(flag)} key={product.id} credit={credit} setCredit={setCredit} setOldCredit={setOldCredit}/>
+            <Product product={product} onChange={(flag)=>handleStateChange(flag)} key={product.id} credit={credit} setCredit={setCredit} setOldCredit={setOldCredit} minusBalance={minusBalance}/>
             ))}
         </div>
       </div>
@@ -164,7 +172,7 @@ function ProductList() {
 
 type ITEMSTATE = 'NEW' | 'SENDING' | 'ORDERED'| 'ORDER_PENDING' | 'CONFIRMED' | 'CANCELLING' | 'ERROR';
 
-function Product({ product, onChange, credit, setCredit, setOldCredit}) {
+function Product({ product, onChange, credit, setCredit, setOldCredit, minusBalance}) {
   const itemId = product.id;
   const price = product.price;
   const [state, setState] = React.useState<ITEMSTATE>('NEW');
@@ -183,6 +191,7 @@ function Product({ product, onChange, credit, setCredit, setOldCredit}) {
       if (
         ["COMPLETED", "FAILED", "TERMINATED"].includes(workflowStatus.status)
       ) {if (workflowStatus.status === "COMPLETED") {
+        minusBalance(-price);
         setState('CONFIRMED');
       }
       setTimeout(()=>{
@@ -233,6 +242,8 @@ function Product({ product, onChange, credit, setCredit, setOldCredit}) {
       setExecid(null);
       clearTimeout(timerRef.current);
       setState('CANCELLING');
+      setOldCredit(credit);
+      setCredit(credit + price);
       setTimeout(()=>{
         setState('NEW');
       }, 1000);
@@ -267,10 +278,10 @@ function Product({ product, onChange, credit, setCredit, setOldCredit}) {
   // }, [executionId]);
 
   useEffect(() => {
-    if (state === 'NEW' || state === 'CONFIRMED') {
+    if (state === 'NEW') {
       onChange(0);
     }
-  },[state])
+  },[])
 
   // Generate a uuid for initiating this transaction.
   // This is generated on this client for idempotency concerns.
