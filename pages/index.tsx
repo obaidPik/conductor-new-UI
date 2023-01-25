@@ -6,33 +6,34 @@ import {
   WorkflowExecutor,
   TaskType,
 } from "@io-orkes/conductor-javascript";
+import { ToastContainer, toast } from 'react-toastify';
 
 import getConfig from "next/config";
 
 const { publicRuntimeConfig } = getConfig();
-// function fetchAPI(str, obj?: RequestInit) {
-//   return fetch(str, obj)
-//     .then(async (res) => {
-//       console.log(res);
-//       if (res.ok) return res.json();
-//       try {
-//         const { message, errorCode } = await res.json();
-//         throw new Error(errorCode + ': ' + message);
-//       } catch (err) {
-//         throw new Error(res.status + ': ' + res.statusText);
-//       }
-//     })
-//     .catch((err) => {
-//       console.error(err);
-//       toast.error(err, {
-//         position: 'top-right',
-//         autoClose: 5000,
-//         closeOnClick: true,
-//         draggable: true,
-//       });
-//       // throw err
-//     });
-// }
+function fetchAPI(str, obj?: RequestInit) {
+  return fetch(str, obj)
+    .then(async (res) => {
+      console.log(res);
+      if (res.ok) return res.json();
+      try {
+        const { message, errorCode } = await res.json();
+        throw new Error(errorCode + ': ' + message);
+      } catch (err) {
+        throw new Error(res.status + ': ' + res.statusText);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      toast.error(err, {
+        position: 'top-right',
+        autoClose: 5000,
+        closeOnClick: true,
+        draggable: true,
+      });
+      // throw err
+    });
+}
 
 export default function Bones() {
   return (
@@ -119,13 +120,13 @@ function ProductList() {
   }
 
   function checkCredit(){
-    // fetchAPI('/api/getCredit').then(res=>setCredit(res.message));
+    fetchAPI('/api/getCredit').then(res=>setCredit(res.message));
   }
   function addBalance(amount:number){
-    // fetchAPI(`/api/addBalance?amount=${amount}`).then(res => {
-    //   setOldCredit(credit);
-    //   setCredit(res.message)
-    // });
+    fetchAPI(`/api/addBalance?amount=${amount}`).then(res => {
+      setOldCredit(credit);
+      setCredit(res.message)
+    });
   }
   function handleAddBalance() {
     if (inputVisible) { 
@@ -153,8 +154,8 @@ function ProductList() {
       <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:max-w-7xl lg:px-8">
         <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 sm:gap-y-10 md:grid-cols-4">
           {products.map((product) => (
-            <Product product={product} onChange={(flag)=>handleStateChange(flag)} key={product.id} />
-          ))}
+            <Product product={product} onChange={(flag)=>handleStateChange(flag)} key={product.id} credit={credit} setCredit={setCredit} setOldCredit={setOldCredit}/>
+            ))}
         </div>
       </div>
     </div>
@@ -163,7 +164,7 @@ function ProductList() {
 
 type ITEMSTATE = 'NEW' | 'SENDING' | 'ORDERED'| 'ORDER_PENDING' | 'CONFIRMED' | 'CANCELLING' | 'ERROR';
 
-function Product({ product,onChange }) {
+function Product({ product, onChange, credit, setCredit, setOldCredit}) {
   const itemId = product.id;
   const price = product.price;
   const [state, setState] = React.useState<ITEMSTATE>('NEW');
@@ -186,7 +187,7 @@ function Product({ product,onChange }) {
       }
       setTimeout(()=>{
         setState('NEW');
-      }, 1000);
+      }, 5000);
         clearTimeout(timerRef.current);
         setExecid(null);
       }
@@ -198,11 +199,10 @@ function Product({ product,onChange }) {
     }
   }, [execId])
   
-
-  const fakeInitialCredit = 100;
   const clientPromise = orkesConductorClient(publicRuntimeConfig.conductor);
   const handleClick = () => {
     setState('ORDERED');
+    onChange(parseInt(price));
     const click = async () => {
       const client = await clientPromise;
       // Create an instance of a workflow executor
@@ -212,9 +212,9 @@ function Product({ product,onChange }) {
         name: publicRuntimeConfig.workflows.checkout,
         version: 1,
         input: {
-        availableCredit: fakeInitialCredit,
-        productID: product.id,
-        price: product.price,
+          availableCredit: credit,
+          productID: product.id,
+          price: product.price,
        },
         correlationId: "obUser",
       });
