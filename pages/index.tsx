@@ -162,7 +162,7 @@ function ProductList() {
       <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:max-w-7xl lg:px-8">
         <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 sm:gap-y-10 md:grid-cols-4">
           {products.map((product) => (
-            <Product product={product} onChange={(flag)=>handleStateChange(flag)} key={product.id} credit={credit} setCredit={setCredit} setOldCredit={setOldCredit} minusBalance={minusBalance}/>
+            <Product product={product} onChange={(flag)=>handleStateChange(flag)} key={product.id} credit={credit} setCredit={setCredit} setOldCredit={setOldCredit} minusBalance={minusBalance} addBalance={addBalance}/>
             ))}
         </div>
       </div>
@@ -172,7 +172,7 @@ function ProductList() {
 
 type ITEMSTATE = 'NEW' | 'SENDING' | 'ORDERED'| 'ORDER_PENDING' | 'CONFIRMED' | 'CANCELLING' | 'ERROR';
 
-function Product({ product, onChange, credit, setCredit, setOldCredit, minusBalance}) {
+function Product({ product, onChange, credit, setCredit, setOldCredit, minusBalance, addBalance}) {
   const itemId = product.id;
   const price = product.price;
   const [state, setState] = React.useState<ITEMSTATE>('NEW');
@@ -190,15 +190,21 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
       );
       if (
         ["COMPLETED", "FAILED", "TERMINATED"].includes(workflowStatus.status)
-      ) {if (workflowStatus.status === "COMPLETED") {
+      ) {
+        if (workflowStatus.status === "COMPLETED") {
         minusBalance(-price);
         setState('CONFIRMED');
-      }
-      setTimeout(()=>{
-        setState('NEW');
-      }, 5000);
+      } 
+      
         clearTimeout(timerRef.current);
         setExecid(null);
+        if (workflowStatus.status === "FAILED"){
+          console.log("credit",credit);
+          setTimeout(()=>{
+            setState('NEW');
+          }, 5000);
+          addBalance(0);
+        }
       }
     }
     if (execId) {
