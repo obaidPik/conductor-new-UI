@@ -53,6 +53,7 @@ export default function Bones() {
             </p>
           </div>
         </header>
+        <ToastContainer />
         <ProductList />
       </div>
     </div>
@@ -188,18 +189,31 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
         execId,
         true
       );
+      setTimeout(()=>{
+        setState('ORDER_PENDING');
+      }, 3000);
       if (
         ["COMPLETED", "FAILED", "TERMINATED"].includes(workflowStatus.status)
       ) {
         if (workflowStatus.status === "COMPLETED") {
-        minusBalance(-price);
+        minusBalance(-price);        
+        toastId.current = toast.success('Order Confirmed', {
+          position: 'top-right',
+          closeOnClick: true,
+          autoClose:2000,
+          draggable: true,
+        });
         setState('CONFIRMED');
       } 
       
         clearTimeout(timerRef.current);
         setExecid(null);
         if (workflowStatus.status === "FAILED"){
-          console.log("credit",credit);
+          toastId.current = toast.success('Order Cancelled - Payment failed', {
+            position: 'top-right',
+            closeOnClick: true,
+            draggable: true,
+          });
           setTimeout(()=>{
             setState('NEW');
           }, 5000);
@@ -214,10 +228,27 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
     }
   }, [execId])
   
+  
+  const toastId = React.useRef(null);
   const clientPromise = orkesConductorClient(publicRuntimeConfig.conductor);
   const handleClick = () => {
     setState('ORDERED');
     onChange(parseInt(price));
+
+    toastId.current = toast.success('Order Placed! We will let you know once we confirm your order ', {
+      position: 'top-right',
+      closeOnClick: true,
+      autoClose:2000,
+      draggable: true,
+      onClose: () => {
+        if (state === 'ORDERED') {
+          setState('ORDER_PENDING');
+        } else if (state === 'CANCELLING') {
+          setState('NEW');
+        }
+      },
+    });
+
     const click = async () => {
       const client = await clientPromise;
       // Create an instance of a workflow executor
@@ -248,6 +279,12 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
       setExecid(null);
       clearTimeout(timerRef.current);
       setState('CANCELLING');
+      
+      toastId.current = toast.success('Order Cancelled', {
+        position: 'top-right',
+        closeOnClick: true,
+        draggable: true,
+      });
       setOldCredit(credit);
       setCredit(credit + price);
       setTimeout(()=>{
@@ -258,115 +295,11 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
     cancelOrder();
   };
 
-  // useEffect(() => {
-  //   // Made a interval effect that will start running when we have an executionId
-  //   const queryStatus = async () => {
-  //     const client = await clientPromise;
-  //     // Using executionId query for status
-  //     const workflowStatus = await client.workflowResource.getExecutionStatus(
-  //       executionId,
-  //       true
-  //     );
-  //     setExecutionStatus(workflowStatus);
-  //     // If workflow finished clear interval and clean executionId
-  //     if (
-  //       ["COMPLETED", "FAILED", "TERMINATED"].includes(workflowStatus.status)
-  //     ) {
-  //       clearTimeout(timerRef.current);
-  //       setExecutionId(null);
-  //     }
-  //   };
-  //   if (executionId) {
-  //     timerRef.current = setInterval(() => {
-  //       queryStatus();
-  //     }, 1000);
-  //   }
-  // }, [executionId]);
-
   useEffect(() => {
     if (state === 'NEW') {
       onChange(0);
     }
   },[])
-
-  // Generate a uuid for initiating this transaction.
-  // This is generated on this client for idempotency concerns.
-  // The request handler starts a Temporal Workflow using this transaction ID as
-  // a unique workflow ID, this allows us to retry the HTTP call and avoid
-  // purchasing the same product more than once
-  // In more advanced scenarios you may want to persist this in LocalStorage or
-  // in the backend to be able to resume this transaction.
-  // const [transactionId, setTransactionId] = React.useState(uuid4());
-
-  // const toastId = React.useRef(null);
-  // function buyProduct() {
-  //   setState('ORDERED');
-  //   onChange(parseInt(price.split('$')[1]));
-  //   toastId.current = toast.success('Order Placed! We will let you know once we confirm your order ', {
-  //     position: 'top-right',
-  //     closeOnClick: true,
-  //     autoClose:2000,
-  //     draggable: true,
-  //     onClose: () => {
-  //       if (stateRef.current === 'ORDERED') {
-  //         setState('ORDER_PENDING');
-  //       } else if (stateRef.current === 'CANCELLING') {
-  //         setState('NEW');
-  //         setTransactionId(uuid4());
-  //       }
-  //     },
-  //   });
-  //   fetchAPI('/api/startBuy', {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //     body: JSON.stringify({ itemId, transactionId ,price}),
-  //   }).then((res) => {
-  //     console.log(res);
-  //     if (res.status==='success') {
-  //       setState('CONFIRMED');
-  //       toastId.current = toast.success('Order Confirmed', {
-  //         position: 'top-right',
-  //         closeOnClick: true,
-  //         autoClose:2000,
-  //         draggable: true,
-  //       });
-  //     } else if (res.status === 'cancel') {
-  //       setState('NEW');
-  //       toastId.current = toast.success('Order Cancelled', {
-  //         position: 'top-right',
-  //         closeOnClick: true,
-  //         draggable: true,
-  //       });
-  //     } else {
-  //       setState('NEW');
-  //       toastId.current = toast.success('Order Cancelled - Payment failed', {
-  //         position: 'top-right',
-  //         closeOnClick: true,
-  //         draggable: true,
-  //       });
-  //     }
-  //   //   fetchAPI(`/api/reserveCredit?amount=${100}`, {
-  //   //     method: 'GET',
-  //   //  })
-  //   });
-  // }
-  // function cancelBuy() {
-  //   if (state === 'ORDERED') {
-  //     setState('CANCELLING');
-  //     fetchAPI('/api/cancelBuy?id=' + transactionId).catch((err) => {
-  //       setState('ERROR');
-  //       toast.error(err, {
-  //         position: 'top-right',
-  //         autoClose: 5000,
-  //         closeOnClick: true,
-  //         draggable: true,
-  //       });
-  //     });
-  //     toast.dismiss(toastId.current);
-  //   }
-  // }
 
   return (
     <div key={product.id} className="relative group">
@@ -383,11 +316,6 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
                 >
                   Buy Now
                 </button>
-              ),
-              SENDING: (
-                <div className="w-full bg-white hover:bg-blue-200 bg-opacity-75 backdrop-filter backdrop-blur py-2 px-4 rounded-md text-sm font-medium text-gray-900 text-center">
-                  Sending...
-                </div>
               ),
               ORDERED: (
                 <button
