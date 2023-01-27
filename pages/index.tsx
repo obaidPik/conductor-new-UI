@@ -7,6 +7,7 @@ import {
   TaskType,
 } from "@io-orkes/conductor-javascript";
 import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import getConfig from "next/config";
 
@@ -182,6 +183,7 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
   const [execId, setExecid] = useState(null);
   const timerRef = useRef(null);
 
+  const toastId = React.useRef(null);
   useEffect(() => {
     const queryStatus = async () => {
       const client = await clientPromise;
@@ -189,9 +191,6 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
         execId,
         true
       );
-      setTimeout(()=>{
-        setState('ORDER_PENDING');
-      }, 3000);
       if (
         ["COMPLETED", "FAILED", "TERMINATED"].includes(workflowStatus.status)
       ) {
@@ -216,7 +215,7 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
           });
           setTimeout(()=>{
             setState('NEW');
-          }, 5000);
+          }, 3000);
           addBalance(0);
         }
       }
@@ -229,7 +228,6 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
   }, [execId])
   
   
-  const toastId = React.useRef(null);
   const clientPromise = orkesConductorClient(publicRuntimeConfig.conductor);
   const handleClick = () => {
     setState('ORDERED');
@@ -240,13 +238,6 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
       closeOnClick: true,
       autoClose:2000,
       draggable: true,
-      onClose: () => {
-        if (state === 'ORDERED') {
-          setState('ORDER_PENDING');
-        } else if (state === 'CANCELLING') {
-          setState('NEW');
-        }
-      },
     });
 
     const click = async () => {
@@ -289,7 +280,7 @@ function Product({ product, onChange, credit, setCredit, setOldCredit, minusBala
       setCredit(credit + price);
       setTimeout(()=>{
         setState('NEW');
-      }, 1000);
+      }, 3000);
     };
 
     cancelOrder();
