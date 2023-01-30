@@ -41,13 +41,13 @@ export default function Bones() {
     <div className="pt-8 pb-80 sm:pt-12 sm:pb-40 lg:pt-24 lg:pb-48">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 sm:static">
         <Head>
-          <title>Temporal + Next.js Example</title>
+          <title>Conductor + Next.js Example</title>
           <link rel="icon" href="/favicon.ico" />
         </Head>
         <header className="relative overflow-hidden">
           <div className="sm:max-w-lg">
             <h1 className="text-4xl font font-extrabold tracking-tight text-gray-900 sm:text-6xl">
-              Temporal.io Purchase, Reserve Credit Demo
+            Conductor Purchase, Reserve Credit Demo
             </h1>
             <p className="mt-4 text-xl text-gray-500">
               Buy Something. We check if you have enough credits to buy the item and approve your purchase.
