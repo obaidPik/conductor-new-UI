@@ -6,52 +6,55 @@ import {
   WorkflowExecutor,
   TaskType,
 } from "@io-orkes/conductor-javascript";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import getConfig from "next/config";
 
 const { publicRuntimeConfig } = getConfig();
-// function fetchAPI(str, obj?: RequestInit) {
-//   return fetch(str, obj)
-//     .then(async (res) => {
-//       console.log(res);
-//       if (res.ok) return res.json();
-//       try {
-//         const { message, errorCode } = await res.json();
-//         throw new Error(errorCode + ': ' + message);
-//       } catch (err) {
-//         throw new Error(res.status + ': ' + res.statusText);
-//       }
-//     })
-//     .catch((err) => {
-//       console.error(err);
-//       toast.error(err, {
-//         position: 'top-right',
-//         autoClose: 5000,
-//         closeOnClick: true,
-//         draggable: true,
-//       });
-//       // throw err
-//     });
-// }
+function fetchAPI(str, obj?: RequestInit) {
+  return fetch(str, obj)
+    .then(async (res) => {
+      console.log(res);
+      if (res.ok) return res.json();
+      try {
+        const { message, errorCode } = await res.json();
+        throw new Error(errorCode + ': ' + message);
+      } catch (err) {
+        throw new Error(res.status + ': ' + res.statusText);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      toast.error(err, {
+        position: 'top-right',
+        autoClose: 5000,
+        closeOnClick: true,
+        draggable: true,
+      });
+      // throw err
+    });
+}
 
 export default function Bones() {
   return (
     <div className="pt-8 pb-80 sm:pt-12 sm:pb-40 lg:pt-24 lg:pb-48">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 sm:static">
         <Head>
-          <title>Temporal + Next.js Example</title>
+          <title>Conductor + Next.js Example</title>
           <link rel="icon" href="/favicon.ico" />
         </Head>
         <header className="relative overflow-hidden">
           <div className="sm:max-w-lg">
             <h1 className="text-4xl font font-extrabold tracking-tight text-gray-900 sm:text-6xl">
-              Temporal.io Purchase, Reserve Credit Demo
+            Conductor Purchase, Reserve Credit Demo
             </h1>
             <p className="mt-4 text-xl text-gray-500">
               Buy Something. We check if you have enough credits to buy the item and approve your purchase.
             </p>
           </div>
         </header>
+        <ToastContainer />
         <ProductList />
       </div>
     </div>
@@ -64,7 +67,7 @@ const products = [
     name: 'Fusion',
     category: 'Icon set',
     href: '#',
-    price: '$49',
+    price: 100,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-01.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -74,7 +77,7 @@ const products = [
     name: 'Icons',
     category: 'Icon set',
     href: '#',
-    price: '$149',
+    price: 100,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-02.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -84,7 +87,7 @@ const products = [
     name: 'Scaffold',
     category: 'Icon set',
     href: '#',
-    price: '$99',
+    price: 100,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-03.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -94,7 +97,7 @@ const products = [
     name: 'Bone',
     category: 'Icon set',
     href: '#',
-    price: '$249',
+    price: 100,
     imageSrc: 'https://tailwindui.com/img/ecommerce-images/product-page-05-related-product-04.jpg',
     imageAlt:
       'Payment application dashboard screenshot with transaction table, financial highlights, and main clients on colorful purple background.',
@@ -119,14 +122,22 @@ function ProductList() {
   }
 
   function checkCredit(){
-    // fetchAPI('/api/getCredit').then(res=>setCredit(res.message));
+    fetchAPI('/api/getCredit').then(res=>setCredit(res.message));
   }
   function addBalance(amount:number){
-    // fetchAPI(`/api/addBalance?amount=${amount}`).then(res => {
-    //   setOldCredit(credit);
-    //   setCredit(res.message)
-    // });
+    fetchAPI(`/api/addBalance?amount=${amount}`).then(res => {
+      setOldCredit(credit);
+      setCredit(res.message)
+    });
   }
+
+  function minusBalance(amount:number){
+    fetchAPI(`/api/addBalance?amount=${amount}`).then(res => {
+      // setOldCredit(credit);
+      // setCredit(res.message)
+    });
+  }
+
   function handleAddBalance() {
     if (inputVisible) { 
       addBalance(amount?amount:0)
@@ -153,8 +164,8 @@ function ProductList() {
       <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:max-w-7xl lg:px-8">
         <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 sm:gap-y-10 md:grid-cols-4">
           {products.map((product) => (
-            <Product product={product} onChange={(flag)=>handleStateChange(flag)} key={product.id} />
-          ))}
+            <Product product={product} onChange={(flag)=>handleStateChange(flag)} key={product.id} credit={credit} setCredit={setCredit} setOldCredit={setOldCredit} minusBalance={minusBalance} addBalance={addBalance}/>
+            ))}
         </div>
       </div>
     </div>
@@ -163,7 +174,7 @@ function ProductList() {
 
 type ITEMSTATE = 'NEW' | 'SENDING' | 'ORDERED'| 'ORDER_PENDING' | 'CONFIRMED' | 'CANCELLING' | 'ERROR';
 
-function Product({ product,onChange }) {
+function Product({ product, onChange, credit, setCredit, setOldCredit, minusBalance, addBalance}) {
   const itemId = product.id;
   const price = product.price;
   const [state, setState] = React.useState<ITEMSTATE>('NEW');
@@ -172,6 +183,7 @@ function Product({ product,onChange }) {
   const [execId, setExecid] = useState(null);
   const timerRef = useRef(null);
 
+  const toastId = React.useRef(null);
   useEffect(() => {
     const queryStatus = async () => {
       const client = await clientPromise;
@@ -181,26 +193,53 @@ function Product({ product,onChange }) {
       );
       if (
         ["COMPLETED", "FAILED", "TERMINATED"].includes(workflowStatus.status)
-      ) {if (workflowStatus.status === "COMPLETED") {
-        console.log("***********Processed Names*******************")
-        console.log(workflowStatus.output.result);
-      }
+      ) {
+        if (workflowStatus.status === "COMPLETED") {
+        minusBalance(-price);        
+        toastId.current = toast.success('Order Confirmed', {
+          position: 'top-right',
+          closeOnClick: true,
+          autoClose:2000,
+          draggable: true,
+        });
+        setState('CONFIRMED');
+      } 
+      
         clearTimeout(timerRef.current);
         setExecid(null);
+        if (workflowStatus.status === "FAILED"){
+          toastId.current = toast.success('Order Cancelled - Payment failed', {
+            position: 'top-right',
+            closeOnClick: true,
+            draggable: true,
+          });
+          setTimeout(()=>{
+            setState('NEW');
+          }, 3000);
+          addBalance(0);
+        }
       }
     }
     if (execId) {
       timerRef.current = setInterval(() => {
         queryStatus();
-      }, 1000);
+      }, 15000);
     }
   }, [execId])
   
-
-  const fakeInitialCredit = 100;
+  
   const clientPromise = orkesConductorClient(publicRuntimeConfig.conductor);
   const handleClick = () => {
     setState('ORDERED');
+    onChange(parseInt(price));
+
+    toastId.current = toast.success('Order Placed! We will let you know once we confirm your order ', {
+      position: 'top-right',
+      closeOnClick: true,
+      autoClose:2000,
+      draggable: true,
+    });
+
     const click = async () => {
       const client = await clientPromise;
       // Create an instance of a workflow executor
@@ -210,9 +249,9 @@ function Product({ product,onChange }) {
         name: publicRuntimeConfig.workflows.checkout,
         version: 1,
         input: {
-        availableCredit: fakeInitialCredit,
-        productID: product.id,
-        price: product.price,
+          availableCredit: credit,
+          productID: product.id,
+          price: product.price,
        },
         correlationId: "obUser",
       });
@@ -221,115 +260,37 @@ function Product({ product,onChange }) {
     click();
   };
 
-  // useEffect(() => {
-  //   // Made a interval effect that will start running when we have an executionId
-  //   const queryStatus = async () => {
-  //     const client = await clientPromise;
-  //     // Using executionId query for status
-  //     const workflowStatus = await client.workflowResource.getExecutionStatus(
-  //       executionId,
-  //       true
-  //     );
-  //     setExecutionStatus(workflowStatus);
-  //     // If workflow finished clear interval and clean executionId
-  //     if (
-  //       ["COMPLETED", "FAILED", "TERMINATED"].includes(workflowStatus.status)
-  //     ) {
-  //       clearTimeout(timerRef.current);
-  //       setExecutionId(null);
-  //     }
-  //   };
-  //   if (executionId) {
-  //     timerRef.current = setInterval(() => {
-  //       queryStatus();
-  //     }, 1000);
-  //   }
-  // }, [executionId]);
+  const cancel = () => {
+    const cancelOrder = async () => {
+      const client = await clientPromise;
+      //create an instance of the executor and cancel the running workflow
+      const executor = new WorkflowExecutor(client);
+      executor.terminate(execId, "User cancelled order");
+      // clean the executor id. and clear the timer
+      setExecid(null);
+      clearTimeout(timerRef.current);
+      setState('CANCELLING');
+      
+      toastId.current = toast.success('Order Cancelled', {
+        position: 'top-right',
+        closeOnClick: true,
+        draggable: true,
+      });
+      setOldCredit(credit);
+      setCredit(credit + price);
+      setTimeout(()=>{
+        setState('NEW');
+      }, 3000);
+    };
+
+    cancelOrder();
+  };
 
   useEffect(() => {
-    if (state === 'NEW' || state === 'CONFIRMED') {
+    if (state === 'NEW') {
       onChange(0);
     }
-  },[state])
-
-  // Generate a uuid for initiating this transaction.
-  // This is generated on this client for idempotency concerns.
-  // The request handler starts a Temporal Workflow using this transaction ID as
-  // a unique workflow ID, this allows us to retry the HTTP call and avoid
-  // purchasing the same product more than once
-  // In more advanced scenarios you may want to persist this in LocalStorage or
-  // in the backend to be able to resume this transaction.
-  // const [transactionId, setTransactionId] = React.useState(uuid4());
-
-  // const toastId = React.useRef(null);
-  // function buyProduct() {
-  //   setState('ORDERED');
-  //   onChange(parseInt(price.split('$')[1]));
-  //   toastId.current = toast.success('Order Placed! We will let you know once we confirm your order ', {
-  //     position: 'top-right',
-  //     closeOnClick: true,
-  //     autoClose:2000,
-  //     draggable: true,
-  //     onClose: () => {
-  //       if (stateRef.current === 'ORDERED') {
-  //         setState('ORDER_PENDING');
-  //       } else if (stateRef.current === 'CANCELLING') {
-  //         setState('NEW');
-  //         setTransactionId(uuid4());
-  //       }
-  //     },
-  //   });
-  //   fetchAPI('/api/startBuy', {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //     body: JSON.stringify({ itemId, transactionId ,price}),
-  //   }).then((res) => {
-  //     console.log(res);
-  //     if (res.status==='success') {
-  //       setState('CONFIRMED');
-  //       toastId.current = toast.success('Order Confirmed', {
-  //         position: 'top-right',
-  //         closeOnClick: true,
-  //         autoClose:2000,
-  //         draggable: true,
-  //       });
-  //     } else if (res.status === 'cancel') {
-  //       setState('NEW');
-  //       toastId.current = toast.success('Order Cancelled', {
-  //         position: 'top-right',
-  //         closeOnClick: true,
-  //         draggable: true,
-  //       });
-  //     } else {
-  //       setState('NEW');
-  //       toastId.current = toast.success('Order Cancelled - Payment failed', {
-  //         position: 'top-right',
-  //         closeOnClick: true,
-  //         draggable: true,
-  //       });
-  //     }
-  //   //   fetchAPI(`/api/reserveCredit?amount=${100}`, {
-  //   //     method: 'GET',
-  //   //  })
-  //   });
-  // }
-  // function cancelBuy() {
-  //   if (state === 'ORDERED') {
-  //     setState('CANCELLING');
-  //     fetchAPI('/api/cancelBuy?id=' + transactionId).catch((err) => {
-  //       setState('ERROR');
-  //       toast.error(err, {
-  //         position: 'top-right',
-  //         autoClose: 5000,
-  //         closeOnClick: true,
-  //         draggable: true,
-  //       });
-  //     });
-  //     toast.dismiss(toastId.current);
-  //   }
-  // }
+  },[])
 
   return (
     <div key={product.id} className="relative group">
@@ -347,13 +308,9 @@ function Product({ product,onChange }) {
                   Buy Now
                 </button>
               ),
-              SENDING: (
-                <div className="w-full bg-white hover:bg-blue-200 bg-opacity-75 backdrop-filter backdrop-blur py-2 px-4 rounded-md text-sm font-medium text-gray-900 text-center">
-                  Sending...
-                </div>
-              ),
               ORDERED: (
                 <button
+                  onClick={cancel}
                   className="w-full bg-white hover:bg-blue-200 bg-opacity-75 backdrop-filter backdrop-blur py-2 px-4 rounded-md text-sm font-medium text-gray-900 text-center"
                 >
                   {/* {getState()} */}
