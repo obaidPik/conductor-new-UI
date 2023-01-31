@@ -3,7 +3,7 @@ module.exports = {
     conductor: {
       keyId: "5524bf66-1173-4888-b345-55f0eadf01b8",
       keySecret: "uWNfvUhgeiAQmYkQ6JsgK6CYBNpgOAbYlbaYiNWN7YILSzv9",
-      serverUrl: "https://conductor-new-ui-888h.vercel.app/api",
+      serverUrl: "https://conductor-new-ui.vercel.app/api",
     },
     workflows:{
       checkout:`ob-checkout`,
